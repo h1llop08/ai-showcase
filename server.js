@@ -1,19 +1,19 @@
 // server.js
-const express = require("express");
-const cors = require("cors");
-const fetch = require("node-fetch"); // если Node.js < 18, установи через npm i node-fetch
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// OpenAI ключ из переменных окружения Render
-const API_KEY = process.env.OPENAI_API_KEY;
+const API_KEY = process.env.OPENAI_API_KEY; // берём ключ из переменной окружения Render
 
 app.post("/chat", async (req, res) => {
-  const userMessage = req.body.message;
-
   try {
+    const userMessage = req.body.message;
+
+    // Запрос к OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -21,27 +21,19 @@ app.post("/chat", async (req, res) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "Ты дружелюбный AI помощник." },
-          { role: "user", content: userMessage }
-        ]
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: userMessage }]
       })
     });
 
     const data = await response.json();
-
-    if (data.choices && data.choices.length > 0) {
-      res.json({ reply: data.choices[0].message.content });
-    } else {
-      res.status(500).json({ reply: "Ошибка сервера 😢" });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ reply: "Ошибка сервера 😢" });
+    res.json({ message: data.choices[0].message.content });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Ошибка подключения к ИИ 😢" });
   }
 });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Server running...");
-});
+// Поддержка Render (или локально)
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
